@@ -1,0 +1,1 @@
+For external checks. Is the ExternalScripts parameter in zabbix_server.conf

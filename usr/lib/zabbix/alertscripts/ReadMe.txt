@@ -1,0 +1,1 @@
+Custom alert scripts. Is the AlertScriptsPath parameter in zabbix_server.conf

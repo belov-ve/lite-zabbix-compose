@@ -1,0 +1,1 @@
+Used to store TLS related files. The names of these files are specified using the environment variables ZBX_TLSCAFILE, ZBX_TLSCRLFILE, ZBX_TLSKEY_FILE and ZBX_TLSPSKFILE

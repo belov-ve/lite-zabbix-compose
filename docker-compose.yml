@@ -84,8 +84,8 @@ services:
           - zabbix-server
     ports:
       - 10051:10051
-    # env_file:
-    # - ${ENV_VARS_DIRECTORY}/.env_srv
+    # env_file:   # as an example
+    # - ${ENV_VARS_DIRECTORY}/.env_srv_mysql
     environment:
       #- DB_SERVER_HOST=zabbix-64-mysql-server  # сделал через алиас
       - DB_SERVER_HOST=mysql-server
@@ -99,15 +99,15 @@ services:
       - ZBX_ENABLE_SNMP_TRAPS=true
     volumes:
       - /etc/localtime:/etc/localtime:ro
+      - snmptraps:/var/lib/zabbix/snmptraps:ro
+      - ./var/lib/zabbix/mibs:/var/lib/zabbix/mibs:ro
       - ./usr/lib/zabbix/alertscripts:/usr/lib/zabbix/alertscripts:ro
       - ./usr/lib/zabbix/externalscripts:/usr/lib/zabbix/externalscripts:ro
-      - ./var/lib/zabbix/dbscripts:/var/lib/zabbix/dbscripts:ro
       - ./var/lib/zabbix/export:/var/lib/zabbix/export:rw
-      - ./var/lib/zabbix/modules:/var/lib/zabbix/modules:ro
       - ./var/lib/zabbix/enc:/var/lib/zabbix/enc:ro
+      # - ./var/lib/zabbix/dbscripts:/var/lib/zabbix/dbscripts:ro
+      # - ./var/lib/zabbix/modules:/var/lib/zabbix/modules:ro
       # - ./var/lib/zabbix/ssh_keys:/var/lib/zabbix/ssh_keys:ro
-      - ./var/lib/zabbix/mibs:/var/lib/zabbix/mibs:ro
-      - snmptraps:/var/lib/zabbix/snmptraps:ro
     tmpfs: /tmp
     ulimits:
       nproc: 65535
@@ -155,7 +155,7 @@ services:
       - PHP_TZ=Europe/Moscow
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      # - ./nginx/zabbix/modules:/usr/share/zabbix/modules
+      - ./usr/share/zabbix/modules/:/usr/share/zabbix/modules/:ro
     restart: unless-stopped   # always
     depends_on:
       - mysql-server
@@ -175,8 +175,8 @@ services:
         aliases:
           - zabbix-agent
           - zabbix-agent-passive
-    ports:
-      - "10050:10050"
+    # ports:
+    #   - "10050:10050"
     environment:
       - ZBX_SERVER_HOST=zabbix-server # the IP/Dns of Zabbix server
       - ZBX_HOSTNAME=zabbix-agent

@@ -105,7 +105,7 @@ services:
       - ./var/lib/zabbix/export:/var/lib/zabbix/export:rw
       - ./var/lib/zabbix/modules:/var/lib/zabbix/modules:ro
       - ./var/lib/zabbix/enc:/var/lib/zabbix/enc:ro
-      #- ./var/lib/zabbix/ssh_keys:/var/lib/zabbix/ssh_keys:ro
+      # - ./var/lib/zabbix/ssh_keys:/var/lib/zabbix/ssh_keys:ro
       - ./var/lib/zabbix/mibs:/var/lib/zabbix/mibs:ro
       - snmptraps:/var/lib/zabbix/snmptraps:ro
     tmpfs: /tmp
@@ -155,7 +155,7 @@ services:
       - PHP_TZ=Europe/Moscow
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - ./web/modules:/usr/share/zabbix/modules
+      # - ./nginx/zabbix/modules:/usr/share/zabbix/modules
     restart: unless-stopped   # always
     depends_on:
       - mysql-server
@@ -223,10 +223,10 @@ services:
       # - /etc/timezone:/etc/timezone:ro
       - agent:/etc/zabbix/
       # вместо предыдущего
-      # - .etc/zabbix/zabbix_agentd.d:/etc/zabbix/zabbix_agentd.d:ro
-      # - .var/lib/zabbix/modules:/var/lib/zabbix/modules:ro
-      # - .var/lib/zabbix/enc:/var/lib/zabbix/enc:ro
-      # - .var/lib/zabbix/ssh_keys:/var/lib/zabbix/ssh_keys:ro
+      # - ./agent/etc/zabbix/zabbix_agentd.d:/etc/zabbix/zabbix_agentd.d:ro
+      # - ./agent/var/lib/zabbix/modules:/var/lib/zabbix/modules:ro
+      # - ./agent/var/lib/zabbix/enc:/var/lib/zabbix/enc:ro
+      # - ./agent/var/lib/zabbix/ssh_keys:/var/lib/zabbix/ssh_keys:ro
     tmpfs: /tmp
     deploy:
       resources:

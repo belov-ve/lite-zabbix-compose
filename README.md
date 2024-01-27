@@ -28,5 +28,11 @@ Example:
     # COMPOSE_PROFILES=<prof_type>[,<prof_type>] docker compose up -d
 
 Example:
+
     # docker compose --profile agent-64 pull -d
     # docker compose --profile agent-64 up -d
+
+After starting the zabbix-server, for the zabbix-agent to work correctly, set the following interface values in the Host zabbix-server settings:
+
+    DNS name: zabbix-agent
+    Connect to: DNS

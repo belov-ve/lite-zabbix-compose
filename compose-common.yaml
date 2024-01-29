@@ -55,7 +55,7 @@ services:
     networks:
       zbx_net:
         aliases:
-          - zabbix-web-nginx
+          - zabbix-web
     ports:
       - 8088:8080
       # - 443:8443

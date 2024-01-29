@@ -1,0 +1,88 @@
+version: '3.8'
+
+services:
+
+  zabbix-server:
+    restart: unless-stopped   # always
+    init: true
+    networks:
+      zbx_net:
+        aliases:
+          - zabbix-server
+    ports:
+      - 10051:10051
+    environment:
+      - ZBX_JAVAGATEWAY_ENABLE=true
+      - ZBX_STARTJAVAPOLLERS=5
+      - ZBX_ENABLE_SNMP_TRAPS=true
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - snmptraps:/var/lib/zabbix/snmptraps:ro
+      - ./var/lib/zabbix/mibs:/var/lib/zabbix/mibs:ro
+      - ./usr/lib/zabbix/alertscripts:/usr/lib/zabbix/alertscripts:ro
+      - ./usr/lib/zabbix/externalscripts:/usr/lib/zabbix/externalscripts:ro
+      - ./var/lib/zabbix/export:/var/lib/zabbix/export:rw
+      - ./var/lib/zabbix/enc:/var/lib/zabbix/enc:ro
+      # - ./var/lib/zabbix/dbscripts:/var/lib/zabbix/dbscripts:ro
+      # - ./var/lib/zabbix/modules:/var/lib/zabbix/modules:ro
+      # - ./var/lib/zabbix/ssh_keys:/var/lib/zabbix/ssh_keys:ro
+    tmpfs: /tmp
+    ulimits:
+      nproc: 65535
+      nofile:
+        soft: 20000
+        hard: 40000
+    deploy:
+      resources:
+        limits:
+          cpus: '0.70'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    stop_grace_period: 30s
+    sysctls:
+      - net.ipv4.ip_local_port_range=1024 64999
+      - net.ipv4.conf.all.accept_redirects=0
+      - net.ipv4.conf.all.secure_redirects=0
+      - net.ipv4.conf.all.send_redirects=0
+    labels:
+      description: "Zabbix server"
+
+
+  zabbix-web-nginx:
+    restart: unless-stopped   # always
+    networks:
+      zbx_net:
+        aliases:
+          - zabbix-web-nginx
+    ports:
+      - 8088:8080
+      # - 443:8443
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+      - ./usr/share/zabbix/modules/:/usr/share/zabbix/modules/:ro
+      # - ./etc/ssl/nginx:/etc/ssl/nginx:ro
+    environment:
+      - ZBX_SERVER_HOST=zabbix-server
+    tmpfs: /tmp
+    deploy:
+      resources:
+        limits:
+          cpus: '0.70'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    stop_grace_period: 10s
+    sysctls:
+      - net.core.somaxconn=65535
+    labels:
+        description: "Nginx server"

@@ -1,0 +1,342 @@
+# Docker compose
+#   Zabbix 6.4 MySQL/PostgreSQL, Nginx, Agent, Trapper
+#--------------------------------------------------------------------
+# For setup:
+#   > docker compose [--profile <prof_type>] [--profile <prof_type>] up -d
+#    or
+#   > COMPOSE_PROFILES=<prof_type>[,<prof_type>] docker compose up
+#    where <prof_type>:
+#     all-64 -> select all for DB type mysql and version 6.4
+#     agent-64 -> select agent and trapper version 6.4
+#     mysql-64 | pgsql-64 -> zabbix server, nginx and DB for zabbix-6.4-latest (default)
+#
+# Example: 
+#   For full setup zabbix-mysql 6.4:
+#     # docker compose --profile all-64 up -d
+#   For full setup zabbix-pgsql 6.4:
+#     # docker compose --profile pgsql-64 --profile agent-64 up -d
+#    or
+#     # COMPOSE_PROFILES=pgsql-64,agent-64 docker compose up
+#   For setup zabbix-6.4 (only servers)
+#     # docker compose up -d
+#
+# For update to latest image:
+#   > docker compose [--profile <prof_type>] [--profile <prof_type>] pull
+#   > docker compose [--profile <prof_type>] [--profile <prof_type>] up -d
+#  or
+#   > COMPOSE_PROFILES=<prof_type>[,<prof_type>] docker compose pull
+#   > COMPOSE_PROFILES=<prof_type>[,<prof_type>] docker compose up -d
+#-------------------------------------------------------------------
+# Belov V.E.
+# 2024-01-29
+
+version: '3.8'
+name: zabbix-6-4
+
+services:
+
+#----------- DB Server -----------
+  mysql-server:
+    # image: 8.0-oracle
+    image: mysql:8.1
+    profiles: ['', "all-64", "mysql-64"]
+    restart: unless-stopped   # always
+    networks:
+      zbx_net:
+        aliases:
+          - mysql-server
+    # ports:
+    #   - 3306:3306
+    env_file:
+      - ./env_db_mysql
+    # secrets:
+    #   - MYSQL_USER
+    #   - MYSQL_PASSWORD
+    #   - MYSQL_ROOT_PASSWORD
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - mysql_data:/var/lib/mysql:rw
+      # - ./var/lib/mysql:/var/lib/mysql:rw
+    stop_grace_period: 1m
+    command:
+      - mysqld
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_bin
+      # Use TLS encryption for connections to database
+      # - --require-secure-transport
+      # - --ssl-ca=/run/secrets/root-ca.pem
+      # - --ssl-cert=/run/secrets/server-cert.pem
+      # - --ssl-key=/run/secrets/server-key.pem
+    labels:
+      description: "Zabbix MySQL server"
+
+
+  postgres-server:
+    image: postgres:15-alpine
+    profiles: ["pgsql-64"]
+    restart: unless-stopped   # always
+    networks:
+      zbx_net:
+        aliases:
+          - postgres-server
+    env_file:
+      - ./env_db_pgsql
+    # secrets:
+    #   - POSTGRES_USER
+    #   - POSTGRES_PASSWORD
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      # - ./var/lib/postgresql/data:/var/lib/postgresql/data:rw
+      - pgsql_data:/var/lib/mysql:rw
+      # - ./.ZBX_DB_CA_FILE:/run/secrets/root-ca.pem:ro
+      # - ./.ZBX_DB_CERT_FILE:/run/secrets/server-cert.pem:ro
+      # - ./.ZBX_DB_KEY_FILE:/run/secrets/server-key.pem:ro
+    # command: -c ssl=on -c ssl_cert_file=/run/secrets/server-cert.pem -c ssl_key_file=/run/secrets/server-key.pem -c ssl_ca_file=/run/secrets/root-ca.pem
+    stop_grace_period: 1m
+    labels:
+      description: "Zabbix PostgreSQL server"
+#-------------------------------------
+
+
+#----------- Zabbix Server -----------
+  zabbix-server-mysql:
+    image: zabbix/zabbix-server-mysql:alpine-6.4-latest
+    profiles: ['', "all-64", "mysql-64"]
+    extends:
+      file: compose-common.yaml
+      service: zabbix-server
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+    env_file:
+      - ./env_db_mysql
+    depends_on:
+      - mysql-server
+    labels:
+      description: "Zabbix server (MySQL)"
+
+
+  zabbix-server-pgsql:
+    image: zabbix/zabbix-server-pgsql:alpine-6.4-latest
+    profiles: ["pgsql-64"]
+    extends:
+      file: compose-common.yaml
+      service: zabbix-server
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      # - ./.ZBX_DB_CA_FILE:/run/secrets/root-ca.pem:ro
+      # - ./.ZBX_DB_CERT_FILE:/run/secrets/server-cert.pem:ro
+      # - ./.ZBX_DB_KEY_FILE:/run/secrets/server-key.pem:ro
+    env_file:
+      - ./env_db_pgsql
+    # secrets:
+    #   - POSTGRES_USER
+    #   - POSTGRES_PASSWORD
+    depends_on:
+      - postgres-server
+    labels:
+        description: "Zabbix server (PostgreSQL)"
+#-------------------------------------
+
+
+#----------- Nginx Server -----------
+  zabbix-web-nginx-mysql:
+    image: zabbix/zabbix-web-nginx-mysql:alpine-6.4-latest
+    profiles: ['', "all-64", "mysql-64"]
+    extends:
+      file: compose-common.yaml
+      service: zabbix-web-nginx
+    env_file:
+      - ./env_db_mysql
+    environment:
+      - PHP_TZ=Europe/Moscow
+    depends_on:
+      - mysql-server
+      - zabbix-server-mysql
+    labels:
+      description: "Web-nginx for Zabbix MySQL"
+
+
+  zabbix-web-nginx-pgsql:
+    image: zabbix/zabbix-web-nginx-pgsql:alpine-6.4-latest
+    profiles: ["pgsql-64"]
+    extends:
+      file: compose-common.yaml
+      service: zabbix-web-nginx
+    env_file:
+      - ./env_db_pgsql
+    environment:
+      - PHP_TZ=Europe/Moscow
+    # volumes:
+    #   - ./env_vars/.ZBX_DB_CA_FILE:/run/secrets/root-ca.pem:ro
+    #   - ./env_vars/.ZBX_DB_CERT_FILE:/run/secrets/server-cert.pem:ro
+    #   - ./env_vars/.ZBX_DB_KEY_FILE:/run/secrets/server-key.pem:ro
+    # secrets:
+    #   - POSTGRES_USER
+    #   - POSTGRES_PASSWORD
+    depends_on:
+      - postgres-server
+      - zabbix-server-pgsql
+    labels:
+      description: "Web-nginx for Zabbix PostgreSQL"
+#-------------------------------------
+
+
+  # After starting the zabbix-server,
+  #   for the zabbix-agent to work correctly,
+  #   set the following interface values in the Host 'Zabbix server' settings:
+  #     DNS name: zabbix-agent
+  #     Connect to: DNS
+  zabbix-agent:
+    image: zabbix/zabbix-agent:alpine-6.4-latest
+    profiles: ["all-64", "agent-64"]
+    restart: unless-stopped   # always
+    networks:
+      zbx_net:
+        aliases:
+          - zabbix-agent
+          - zabbix-agent-passive
+    # ports:
+    #   - "10050:10050"
+    environment:
+      - ZBX_SERVER_HOST=zabbix-server # the IP/Dns of Zabbix server
+      - ZBX_HOSTNAME=zabbix-agent
+      - ZBX_ACTIVE_ALLOW=false
+        # - ZBX_SOURCEIP=
+        # - ZBX_DEBUGLEVEL=3
+        # - ZBX_LOGREMOTECOMMANDS=0
+        # - ZBX_FORCEACTIVECHECKSONSTART=0
+        # - ZBX_HEARTBEAT_FREQUENCY=60
+        # - ZBX_HOSTINTERFACE=
+        # - ZBX_HOSTINTERFACEITEM=
+        # - ZBX_PASSIVE_ALLOW=true
+        # - ZBX_PASSIVESERVERS=
+        # - ZBX_ACTIVE_ALLOW=true
+        # - ZBX_ACTIVESERVERS=
+        # - ZBX_LISTENIP=
+        # - ZBX_LISTENBACKLOG=
+        # - ZBX_STARTAGENTS=3
+        # - ZBX_HOSTNAMEITEM=system.hostname
+        # - ZBX_METADATA=
+        # - ZBX_METADATAITEM=
+        # - ZBX_REFRESHACTIVECHECKS=120
+        # - ZBX_BUFFERSEND=5
+        # - ZBX_BUFFERSIZE=100
+        # - ZBX_MAXLINESPERSECOND=20
+        # - ZBX_ALIAS=""
+        # - ZBX_TIMEOUT=3
+        # - ZBX_UNSAFEUSERPARAMETERS=0
+        # - ZBX_LOADMODULE="dummy1.so,dummy2.so,dummy10.so"
+        # - ZBX_TLSCONNECT=unencrypted
+        # - ZBX_TLSACCEPT=unencrypted
+        # - ZBX_TLSCAFILE=
+        # - ZBX_TLSCRLFILE=
+        # - ZBX_TLSSERVERCERTISSUER=
+        # - ZBX_TLSSERVERCERTSUBJECT=
+        # - ZBX_TLSCERTFILE=
+        # - ZBX_TLSKEYFILE=
+        # - ZBX_TLSPSKIDENTITY=
+        # - ZBX_TLSPSKFILE=
+        # - ZBX_DENYKEY=system.run[*]
+        # - ZBX_ALLOWKEY=
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      # - /etc/timezone:/etc/timezone:ro
+      - agent:/etc/zabbix/
+      # вместо предыдущего
+      # - ./agent/etc/zabbix/zabbix_agentd.d:/etc/zabbix/zabbix_agentd.d:ro
+      # - ./agent/var/lib/zabbix/modules:/var/lib/zabbix/modules:ro
+      # - ./agent/var/lib/zabbix/enc:/var/lib/zabbix/enc:ro
+      # - ./agent/var/lib/zabbix/ssh_keys:/var/lib/zabbix/ssh_keys:ro
+    tmpfs: /tmp
+    deploy:
+      resources:
+        limits:
+          cpus: '0.2'
+          memory: 128M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+      mode: global
+    init: true
+    privileged: true                # access mode for allowing resource access
+    pid: "host"
+    # depends_on:
+    #   - zabbix-server
+    stop_grace_period: 5s
+    labels:
+      description: "Zabbix agent"
+
+
+  zabbix-snmptraps:
+  # Override snmptrapd command arguments to receive SNMP traps by DNS
+  # It must be done with ZBX_SNMP_TRAP_USE_DNS=true environment variable
+  #  command: /usr/sbin/snmptrapd -C -c /etc/snmp/snmptrapd.conf -Lo -A
+    image: zabbix/zabbix-snmptraps:alpine-6.4-latest
+    profiles:  ["all-64", "agent-64"]
+    restart: unless-stopped   # always
+    networks:
+      zbx_net:
+        aliases:
+          - zabbix-snmptraps
+    ports:
+      - 162:1162/udp
+    volumes:
+    - snmptraps:/var/lib/zabbix/snmptraps:rw
+    environment:
+      - ZBX_SNMP_TRAP_DATE_FORMAT=+%Y%m%d.%H%M%S
+      - ZBX_SNMP_TRAP_FORMAT=\n
+        # To use DNS instead of sender IP override container's command: /usr/sbin/snmptrapd -C -c /etc/snmp/snmptrapd.conf -Lo -A
+        # Need to remove "-n" command argument
+      - ZBX_SNMP_TRAP_USE_DNS=false
+    tmpfs: /tmp
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+    stop_grace_period: 5s
+    labels:
+      description: "Zabbix snmptraps"
+
+
+  # adminer:
+  #   image: adminer
+  #   restart: unless-stopped
+  #   profiles:
+  #     - debug
+  #   networks:
+  #     - zbx_net
+  #   ports:
+  #     - 8086:8080
+  #   depends_on:
+  #     - mysql-server
+
+
+networks:
+  zbx_net:
+    driver: bridge
+
+
+volumes:
+  mysql_data:
+  pgsql_data:
+  snmptraps:
+  agent:
+
+
+# secrets:
+#   MYSQL_USER:
+#     file: ./.MYSQL_USER
+#   MYSQL_PASSWORD:
+#     file: ./.MYSQL_PASSWORD
+#   MYSQL_ROOT_USER:
+#     file: ./.MYSQL_ROOT_USER
+#   MYSQL_ROOT_PASSWORD:
+#     file: ./.MYSQL_ROOT_PASSWORD
+#   POSTGRES_USER:
+#     file: ./.POSTGRES_USER
+#   POSTGRES_PASSWORD:
+#     file: ./.POSTGRES_PASSWORD

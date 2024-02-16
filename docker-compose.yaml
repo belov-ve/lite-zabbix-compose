@@ -28,7 +28,7 @@
 #   > COMPOSE_PROFILES=<prof_type>[,<prof_type>] docker compose up -d
 #-------------------------------------------------------------------
 # Belov V.E.
-# 2024-01-29
+# 2024-02-02
 
 version: '3.8'
 name: zabbix-6-4
@@ -79,6 +79,8 @@ services:
       zbx_net:
         aliases:
           - postgres-server
+    # ports:
+    #   - 5432:5432
     env_file:
       - ./env_db_pgsql
     # secrets:
@@ -87,7 +89,7 @@ services:
     volumes:
       - /etc/localtime:/etc/localtime:ro
       # - ./var/lib/postgresql/data:/var/lib/postgresql/data:rw
-      - pgsql_data:/var/lib/mysql:rw
+      - pgsql_data:/var/lib/postgresql/data:rw
       # - ./.ZBX_DB_CA_FILE:/run/secrets/root-ca.pem:ro
       # - ./.ZBX_DB_CERT_FILE:/run/secrets/server-cert.pem:ro
       # - ./.ZBX_DB_KEY_FILE:/run/secrets/server-key.pem:ro
@@ -199,7 +201,8 @@ services:
     #   - "10050:10050"
     environment:
       - ZBX_SERVER_HOST=zabbix-server # the IP/Dns of Zabbix server
-      - ZBX_HOSTNAME=zabbix-agent
+      # - ZBX_HOSTNAME=zabbix-agent
+      - ZBX_HOSTNAME=zabbix-server
       - ZBX_ACTIVE_ALLOW=false
         # - ZBX_SOURCEIP=
         # - ZBX_DEBUGLEVEL=3
@@ -281,7 +284,7 @@ services:
     ports:
       - 162:1162/udp
     volumes:
-    - snmptraps:/var/lib/zabbix/snmptraps:rw
+      - snmptraps:/var/lib/zabbix/snmptraps:rw
     environment:
       - ZBX_SNMP_TRAP_DATE_FORMAT=+%Y%m%d.%H%M%S
       - ZBX_SNMP_TRAP_FORMAT=\n
@@ -316,8 +319,13 @@ services:
 
 
 networks:
+  ## Config: Stack internal network
   zbx_net:
     driver: bridge
+  ## Config: External shared network with other containers
+  # zbx_net:
+  #   # external: true    # don't create network
+  #   name: zabbix_network
 
 
 volumes:

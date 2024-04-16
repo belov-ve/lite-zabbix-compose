@@ -6,17 +6,21 @@
 #    or
 #   > COMPOSE_PROFILES=<prof_type>[,<prof_type>] docker compose up
 #    where <prof_type>:
-#     all-64 -> select all for DB type mysql and version 6.4
-#     agent-64 -> select agent and trapper version 6.4
-#     mysql-64 | pgsql-64 -> zabbix server, nginx and DB for zabbix-6.4-latest (default)
+#     all-64 -> Select zabbix-server DB type mysql. zabbix-proxy DB mysql3. All version 6.4
+#     agent-64 -> Select agent and trapper version 6.4
+#     mysql-64 | pgsql-64 -> zabbix server, nginx DB for zabbix-6.4
+#     proxy-sqlite-64 | proxy-mysql-64 -> Select zabbix proxy server DB for zabbix-6.4
+#
+#   If you do not specify a profile, they will be installed:
+#     mysql-server, zabbix-server-mysql, zabbix-web-nginx-mysql for zabbix-6.4
 #
 # Example: 
 #   For full setup zabbix-mysql 6.4:
 #     # docker compose --profile all-64 up -d
 #   For full setup zabbix-pgsql 6.4:
-#     # docker compose --profile pgsql-64 --profile agent-64 up -d
+#     # docker compose --profile pgsql-64 --profile agent-64 --profile proxy-sqlite-64 up -d
 #    or
-#     # COMPOSE_PROFILES=pgsql-64,agent-64 docker compose up
+#     # COMPOSE_PROFILES=pgsql-64,agent-64,proxy-sqlite-64 docker compose up
 #   For setup zabbix-6.4 (only servers)
 #     # docker compose up -d
 #
@@ -28,11 +32,10 @@
 #   > COMPOSE_PROFILES=<prof_type>[,<prof_type>] docker compose up -d
 #-------------------------------------------------------------------
 # Belov V.E.
-# 2024-02-02
+# 2024-04-16
 
-version: '3.8'
+# version: '3.8'  # obsolete
 name: zabbix-6-4
-
 services:
 
 #----------- DB Server -----------
@@ -275,7 +278,7 @@ services:
   # It must be done with ZBX_SNMP_TRAP_USE_DNS=true environment variable
   #  command: /usr/sbin/snmptrapd -C -c /etc/snmp/snmptrapd.conf -Lo -A
     image: zabbix/zabbix-snmptraps:alpine-6.4-latest
-    profiles:  ["all-64", "agent-64"]
+    profiles: ["all-64", "agent-64"]
     restart: unless-stopped   # always
     networks:
       zbx_net:
@@ -303,6 +306,40 @@ services:
     stop_grace_period: 5s
     labels:
       description: "Zabbix snmptraps"
+
+
+#----------- Proxy Server -----------
+  zabbix-proxy-sqlite3:
+    image: zabbix/zabbix-proxy-sqlite3:alpine-6.4-latest
+    profiles: ["all-64", "proxy-sqlite-64"]
+    extends:
+      file: compose-common.yaml
+      service: zabbix-proxy
+    restart: unless-stopped   # always
+    ports:
+      - 10061:10051
+    labels:
+      description: "Zabbix proxy with SQLite3 database support"
+
+  zabbix-proxy-mysql:
+    image: zabbix/zabbix-proxy-mysql:alpine-6.4-latest
+    profiles: ["proxy-mysql-64"]
+    extends:
+      file: compose-common.yaml
+      service: zabbix-proxy
+    ports:
+      - 10061:10051
+    env_file:
+      - ./env_db_mysql_proxy
+    # secrets:
+    #   - MYSQL_USER
+    #   - MYSQL_PASSWORD
+      # - client-key.pem
+      # - client-cert.pem
+      # - root-ca.pem
+    labels:
+      description: "Zabbix proxy with MySQL database support"
+#-------------------------------------
 
 
   # adminer:

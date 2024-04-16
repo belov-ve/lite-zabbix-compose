@@ -86,3 +86,43 @@ services:
       - net.core.somaxconn=65535
     labels:
         description: "Nginx server"
+
+
+  zabbix-proxy:
+    networks:
+      zbx_net:
+        aliases:
+          - zabbix-proxy
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./usr/lib/zabbix/externalscripts:/usr/lib/zabbix/externalscripts:ro
+      - ./var/lib/zabbix/modules:/var/lib/zabbix/modules:ro
+      - ./var/lib/zabbix/enc:/var/lib/zabbix/enc:ro
+      # - ./var/lib/zabbix/ssh_keys:/var/lib/zabbix/ssh_keys:ro
+      - ./var/lib/zabbix/mibs:/var/lib/zabbix/mibs:ro
+      - snmptraps:/var/lib/zabbix/snmptraps:ro
+    tmpfs: /tmp
+    ulimits:
+      nproc: 65535
+      nofile:
+        soft: 20000
+        hard: 40000
+    deploy:
+      resources:
+        limits:
+          cpus: '0.70'
+          memory: 512M
+        reservations:
+          cpus: '0.3'
+          memory: 256M
+    env_file:
+      - ./env_prx
+    stop_grace_period: 30s
+    sysctls:
+      - net.ipv4.ip_local_port_range=1024 64999
+      - net.ipv4.conf.all.accept_redirects=0
+      - net.ipv4.conf.all.secure_redirects=0
+      - net.ipv4.conf.all.send_redirects=0
+      # - net.ipv4.ping_group_range=0 1995
+    labels:
+      description: "Zabbix proxy"

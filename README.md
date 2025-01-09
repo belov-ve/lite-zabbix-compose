@@ -1,5 +1,5 @@
 # lite-zabbix-compose
-## docker-compose.yml for Zabbix 6.4
+## docker-compose.yml for Zabbix 7.0 6.4
 
 ### For setup:
 

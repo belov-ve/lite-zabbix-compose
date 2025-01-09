@@ -20,10 +20,12 @@ Example:
 
     For full setup zabbix-mysql 6.4:
         # docker compose --profile all-64 up -d
+
     For full setup zabbix-pgsql 6.4:
         # docker compose --profile pgsql-64 --profile agent-64 --profile proxy-sqlite-64 up -d
       or
         # COMPOSE_PROFILES=pgsql-64,agent-64,proxy-sqlite-64 docker compose up
+
     For setup zabbix-6.4 (only servers)
         # docker compose up -d
 

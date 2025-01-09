@@ -10,6 +10,7 @@
     where <prof_type>:
         all-64 -> Select zabbix-server DB type mysql. zabbix-proxy DB mysql3. All version 6.4
         agent-64 -> Select agent and trapper version 6.4
+        agent-7  -> Select agent and trapper version 7.0
         mysql-64 | pgsql-64 -> zabbix server, nginx DB for zabbix-6.4
         proxy-sqlite-64 | proxy-mysql-64 -> Select zabbix proxy server DB for zabbix-6.4
 
@@ -20,10 +21,12 @@ Example:
 
     For full setup zabbix-mysql 6.4:
         # docker compose --profile all-64 up -d
+
     For full setup zabbix-pgsql 6.4:
         # docker compose --profile pgsql-64 --profile agent-64 --profile proxy-sqlite-64 up -d
       or
         # COMPOSE_PROFILES=pgsql-64,agent-64,proxy-sqlite-64 docker compose up
+
     For setup zabbix-6.4 (only servers)
         # docker compose up -d
 

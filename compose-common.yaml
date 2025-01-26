@@ -1,4 +1,4 @@
-version: '3.8'
+# version: '3.8'
 
 services:
 
@@ -9,8 +9,6 @@ services:
       zbx_net:
         aliases:
           - zabbix-server
-    ports:
-      - 10051:10051
     environment:
       - ZBX_JAVAGATEWAY_ENABLE=true
       - ZBX_STARTJAVAPOLLERS=5
@@ -89,6 +87,7 @@ services:
 
 
   zabbix-proxy:
+    restart: unless-stopped   # always
     networks:
       zbx_net:
         aliases:
@@ -126,3 +125,67 @@ services:
       # - net.ipv4.ping_group_range=0 1995
     labels:
       description: "Zabbix proxy"
+
+
+  zabbix-agent:
+    restart: unless-stopped   # always
+    networks:
+      zbx_net:
+        aliases:
+          - zabbix-agent
+          - zabbix-agent-passive
+    env_file:
+      - ./env_agent
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      # - /etc/timezone:/etc/timezone:ro
+      - agent:/etc/zabbix/
+      # вместо предыдущего
+      # - ./agent/etc/zabbix/zabbix_agentd.d:/etc/zabbix/zabbix_agentd.d:ro
+      # - ./agent/var/lib/zabbix/modules:/var/lib/zabbix/modules:ro
+      # - ./agent/var/lib/zabbix/enc:/var/lib/zabbix/enc:ro
+      # - ./agent/var/lib/zabbix/ssh_keys:/var/lib/zabbix/ssh_keys:ro
+    tmpfs: /tmp
+    deploy:
+      resources:
+        limits:
+          cpus: '0.2'
+          memory: 128M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+      mode: global
+    init: true
+    privileged: true                # access mode for allowing resource access
+    pid: "host"
+    stop_grace_period: 5s
+    labels:
+      description: "Zabbix agent"
+
+
+  zabbix-snmptraps:
+    restart: unless-stopped   # always
+    networks:
+      zbx_net:
+        aliases:
+          - zabbix-snmptraps
+    ports:
+      - 162:1162/udp
+    environment:
+      - ZBX_SNMP_TRAP_DATE_FORMAT=+%Y%m%d.%H%M%S
+      - ZBX_SNMP_TRAP_FORMAT=\n
+        # To use DNS instead of sender IP override container's command: /usr/sbin/snmptrapd -C -c /etc/snmp/snmptrapd.conf -Lo -A
+        # Need to remove "-n" command argument
+      - ZBX_SNMP_TRAP_USE_DNS=false
+    tmpfs: /tmp
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+    stop_grace_period: 5s
+    labels:
+      description: "Zabbix snmptraps"

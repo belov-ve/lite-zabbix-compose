@@ -11,10 +11,12 @@
 #   Agent:
 #     agent-7  -> Select agent and trapper version 7.0
 #     agent-64 -> Select agent and trapper version 6.4
-#    DB:
+#   Agent2:
+#     agent2-7
+#   DB:
 #     mysql-7 | pgsql-7 -> zabbix server, nginx DB for zabbix-7.0
 #     mysql-64 | pgsql-64 -> zabbix server, nginx DB for zabbix-6.4
-#    Proxy:
+#   Proxy:
 #     proxy-sqlite-7 | proxy-mysql-7 -> Select zabbix proxy server DB for zabbix-7
 #     proxy-sqlite-64 | proxy-mysql-64 -> Select zabbix proxy server DB for zabbix-6.4
 #
@@ -361,11 +363,7 @@ services:
       - /etc/localtime:/etc/localtime:ro
       # - /etc/timezone:/etc/timezone:ro
       - agent:/etc/zabbix/
-      # вместо предыдущего
-      # - ./agent/etc/zabbix/zabbix_agentd.d:/etc/zabbix/zabbix_agentd.d:ro
-      # - ./agent/var/lib/zabbix/modules:/var/lib/zabbix/modules:ro
-      # - ./agent/var/lib/zabbix/enc:/var/lib/zabbix/enc:ro
-      # - ./agent/var/lib/zabbix/ssh_keys:/var/lib/zabbix/ssh_keys:ro
+      # - ./agent/zabbix_agentd.conf:/etc/zabbix/zabbix_agentd.conf
     labels:
       description: "Zabbix agent"
 
@@ -384,13 +382,30 @@ services:
       - /etc/localtime:/etc/localtime:ro
       # - /etc/timezone:/etc/timezone:ro
       - agent:/etc/zabbix/
-      # вместо предыдущего
-      # - ./agent/etc/zabbix/zabbix_agentd.d:/etc/zabbix/zabbix_agentd.d:ro
-      # - ./agent/var/lib/zabbix/modules:/var/lib/zabbix/modules:ro
-      # - ./agent/var/lib/zabbix/enc:/var/lib/zabbix/enc:ro
-      # - ./agent/var/lib/zabbix/ssh_keys:/var/lib/zabbix/ssh_keys:ro
+      # - ./agent/zabbix_agentd.conf:/etc/zabbix/zabbix_agentd.conf
     labels:
       description: "Zabbix agent"
+
+
+  zabbix-agent2-7.0:
+    image: zabbix/zabbix-agent2:alpine-7.0-latest
+    profiles: ["agent2-7"]
+    extends:
+      file: compose-common.yaml
+      service: zabbix-agent2
+    # ports:
+    #   - "10051:10051"
+    environment:
+      - ZBX_HOSTNAME=zabbix-agent2
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      # - /etc/timezone:/etc/timezone:ro
+      - agent2:/etc/zabbix/
+      # - ./agent2/zabbix_agent2.conf:/etc/zabbix/zabbix_agent2.conf
+      # - ./agent2/plugins.d/plugins.d:/etc/zabbix/zabbix_agent2.d/plugins.d
+      # - ./agent2/plugins.d/plugins.d/mqtt.conf:/etc/zabbix/zabbix_agent2.d/plugins.d/mqtt.conf
+    labels:
+      description: "Zabbix agent2"
 
 
   zabbix-snmptraps-6.4:
@@ -518,7 +533,7 @@ volumes:
   snmptraps:
   snmptrapd_config:
   agent:
-
+  agent2:
 
 # secrets:
 #   MYSQL_USER:

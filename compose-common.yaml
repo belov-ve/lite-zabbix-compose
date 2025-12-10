@@ -156,13 +156,37 @@ services:
           memory: 64M
       mode: global
     init: true
-    privileged: true                # access mode for allowing resource access
+    privileged: true
     pid: "host"
     stop_grace_period: 5s
     labels:
       description: "Zabbix agent"
 
 
+  zabbix-agent2:
+    restart: unless-stopped   # always
+    networks:
+      zbx_net:
+        aliases:
+          - zabbix-agent2
+    env_file:
+      - ./env_agent2
+    tmpfs: /tmp
+    deploy:
+      resources:
+        limits:
+          cpus: '0.2'
+          memory: 128M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+      mode: global
+    init: true
+    privileged: true
+    pid: "host"
+    stop_grace_period: 5s
+    labels:
+      description: "Zabbix agent2"
   zabbix-snmptraps:
     restart: unless-stopped   # always
     networks:

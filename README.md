@@ -22,25 +22,26 @@
 
 Where <prof_type>
 
-| <prof_type>* | Version |Zabbix Server|DB Server|Zabbix NGINX|Zabbix proxy**|Zabbix agent|Zabbix trapper|
-|:-------------|:-------:|:-----------:|:-------:|:----------:|:------------:|:----------:|:------------:|
-| `Complect`   |         |             |         |            |              |            |              |
-| * If no set  |7.0 MySQL| +           | +       | +          |              |            |              |
-| all-7        |7.0 MySQL| +           | +       | +          | + `**SQLite` | +          | +            | 
-| all-64       |6.4 MySQL| +           | +       | +          | + `**SQLite` | +          | +            |
-| `By DB type` |         |             |         |            |              |            |              |
-| mysql-7      |7.0 MySQL| +           | +       | +          |              |            |              |
-| pgsql-7      |7.0 PgSQL| +           | +       | +          |              |            |              |
-| mysql-64     |6.4 MySQL| +           | +       | +          |              |            |              |
-| pgsql-64     |6.4 PgSQL| +           | +       | +          |              |            |              |
-| `Agent`      |         |             |         |            |              |            |              |
-| agent-7      |7.0      |             |         |            |              | +          | +            |
-| agent-64     |6.4      |             |         |            |              | +          | +            |
-| `Proxy`        |          |          |         |            |              |            |              |
-| proxy-sqlite-7 |7.0 SQLite|          |         |            | +            |            |              |
-| proxy-mysql-7  |7.0 MySQL |          |         |            | +            |            |              |
-| proxy-sqlite-64|6.4 SQLite|          |         |            | +            |            |              |
-| proxy-mysql-64 |6.4 MySQL |          |         |            | +            |            |              |
+| <prof_type>* | Version |Zabbix Server|DB Server|Zabbix NGINX|Zabbix proxy**|Zabbix agent|Zabbix agent2|Zabbix trapper|
+|:-------------|:-------:|:-----------:|:-------:|:----------:|:------------:|:----------:|:-----------:|:------------:|
+| `Complect`   |         |             |         |            |              |            |             |              |
+| * If no set  |7.0 MySQL| +           | +       | +          |              |            |             |              |
+| all-7        |7.0 MySQL| +           | +       | +          | + `**SQLite` | +          |             | +            | 
+| all-64       |6.4 MySQL| +           | +       | +          | + `**SQLite` | +          |             | +            |
+| `By DB type` |         |             |         |            |              |            |             |              |
+| mysql-7      |7.0 MySQL| +           | +       | +          |              |            |             |              |
+| pgsql-7      |7.0 PgSQL| +           | +       | +          |              |            |             |              |
+| mysql-64     |6.4 MySQL| +           | +       | +          |              |            |             |              |
+| pgsql-64     |6.4 PgSQL| +           | +       | +          |              |            |             |              |
+| `Agent`      |         |             |         |            |              |            |             |              |
+| agent-7      |7.0      |             |         |            |              | +          |             | +            |
+| agent2-7     |7.0      |             |         |            |              |            | +           | +            |
+| agent-64     |6.4      |             |         |            |              |            |             | +            |
+| `Proxy`        |          |          |         |            |              |            |             |              |
+| proxy-sqlite-7 |7.0 SQLite|          |         |            | +            |            |             |              |
+| proxy-mysql-7  |7.0 MySQL |          |         |            | +            |            |             |              |
+| proxy-sqlite-64|6.4 SQLite|          |         |            | +            |            |             |              |
+| proxy-mysql-64 |6.4 MySQL |          |         |            | +            |            |             |              |
 
 
 	If you do not specify a profile, they will be installed:
